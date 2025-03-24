@@ -1,28 +1,27 @@
 import org.example.grugDB.GrugDBClient;
 import org.junit.jupiter.api.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.*;
 import java.util.*;
 
-import static org.junit.Assert.assertSame;
 import static org.junit.jupiter.api.Assertions.*;
 
 class GrugDBClientTest {
 
-    @BeforeEach
-    void setUp() {
-        GrugDBClient.getInstance(true); // Clear database before each test
-    }
+    private static final Logger log = LoggerFactory.getLogger(GrugDBClientTest.class);
 
     @Test
     void getInstance_createsSingletonInstance() {
-        GrugDBClient instance1 = GrugDBClient.getInstance(false);
-        GrugDBClient instance2 = GrugDBClient.getInstance(false);
+        GrugDBClient instance1 = GrugDBClient.getInstance();
+        GrugDBClient instance2 = GrugDBClient.getInstance();
         Assertions.assertSame(instance1, instance2);
     }
 
     @Test
     void save_persistsEntity() throws IOException {
-        GrugDBClient client = GrugDBClient.getInstance(false);
+        GrugDBClient client = GrugDBClient.getInstance();
         TestEntity entity = new TestEntity("test");
         client.save(entity);
         List<TestEntity> entities = client.find(TestEntity.class);
@@ -32,7 +31,7 @@ class GrugDBClientTest {
 
     @Test
     void update_updatesMatchingEntities() throws IOException {
-        GrugDBClient client = GrugDBClient.getInstance(false);
+        GrugDBClient client = GrugDBClient.getInstance();
         TestEntity entity = new TestEntity("test");
         client.save(entity);
         client.update(TestEntity.class, e -> e.getName().equals("test"), e -> e.setName("updated"));
@@ -43,7 +42,7 @@ class GrugDBClientTest {
 
     @Test
     void updateOrSave_updatesOrSavesEntity() throws IOException {
-        GrugDBClient client = GrugDBClient.getInstance(false);
+        GrugDBClient client = GrugDBClient.getInstance();
         TestEntity entity = new TestEntity("test");
         client.updateOrSave(entity, e -> e.getName().equals("test"), e -> e.setName("updated"));
         List<TestEntity> entities = client.find(TestEntity.class);
@@ -58,7 +57,7 @@ class GrugDBClientTest {
 
     @Test
     void saveBatch_persistsMultipleEntities() throws IOException {
-        GrugDBClient client = GrugDBClient.getInstance(false);
+        GrugDBClient client = GrugDBClient.getInstance();
         List<TestEntity> entities = Arrays.asList(new TestEntity("test1"), new TestEntity("test2"));
         client.saveBatch(entities);
         List<TestEntity> retrievedEntities = client.find(TestEntity.class);
@@ -67,7 +66,7 @@ class GrugDBClientTest {
 
     @Test
     void find_retrievesAllEntities() throws IOException {
-        GrugDBClient client = GrugDBClient.getInstance(false);
+        GrugDBClient client = GrugDBClient.getInstance();
         TestEntity entity1 = new TestEntity("test1");
         TestEntity entity2 = new TestEntity("test2");
         client.save(entity1);
@@ -78,7 +77,7 @@ class GrugDBClientTest {
 
     @Test
     void find_withCondition_retrievesMatchingEntities() throws IOException {
-        GrugDBClient client = GrugDBClient.getInstance(false);
+        GrugDBClient client = GrugDBClient.getInstance();
         TestEntity entity1 = new TestEntity("test1");
         TestEntity entity2 = new TestEntity("test2");
         client.save(entity1);
@@ -90,7 +89,7 @@ class GrugDBClientTest {
 
     @Test
     void delete_removesMatchingEntities() throws IOException {
-        GrugDBClient client = GrugDBClient.getInstance(false);
+        GrugDBClient client = GrugDBClient.getInstance();
         TestEntity entity1 = new TestEntity("test1");
         TestEntity entity2 = new TestEntity("test2");
         client.save(entity1);
@@ -100,6 +99,23 @@ class GrugDBClientTest {
         assertEquals(1, entities.size());
         assertEquals("test2", entities.getFirst().getName());
     }
+
+    @Test
+    void profiling() throws IOException {
+        GrugDBClient client = GrugDBClient.getInstance();
+
+        long start = System.currentTimeMillis();
+        client.saveBatch(mockEntities(1000000));
+        long end = System.currentTimeMillis();
+        log.info("Batch save took {} ms", end-start);
+
+        start = System.currentTimeMillis();
+        client.find(TestEntity.class, e -> e.getName().equals("999999"));
+        end = System.currentTimeMillis();
+
+        log.info("Find took {} ms", end-start);
+    }
+
 
     static class TestEntity implements Serializable {
         private String name;
@@ -115,5 +131,13 @@ class GrugDBClientTest {
         public void setName(String name) {
             this.name = name;
         }
+    }
+
+    static List<TestEntity> mockEntities(int amount) {
+        List<TestEntity> list = new ArrayList<>();
+        for(;amount > 0; amount--) {
+            list.add(new TestEntity(Integer.toString(amount)));
+        }
+        return list;
     }
 }

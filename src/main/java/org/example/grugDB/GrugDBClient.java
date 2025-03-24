@@ -21,12 +21,11 @@ public class GrugDBClient {
     /**
      * Retrieves or creates a singleton instance of GrugDBClient.
      *
-     * @param shouldClearDatabase If true, clears the existing database directory before initialization.
      * @return The singleton instance of GrugDBClient.
      */
-    public static GrugDBClient getInstance(boolean shouldClearDatabase) {
+    public static GrugDBClient getInstance() {
         if(databaseDirectory.exists()) {
-            if(shouldClearDatabase) { clearDatabaseDirectory(); }
+            logger.info("Database directory already created");
         } else {
             if (!databaseDirectory.mkdirs()) { logger.error("Failed to create database directory"); }
         }
@@ -34,7 +33,7 @@ public class GrugDBClient {
         return singletonInstance == null ? singletonInstance = new GrugDBClient() : singletonInstance;
     }
 
-    private static void clearDatabaseDirectory() {
+    public static void clearDatabaseDirectory() {
         for (File storedFile : Objects.requireNonNull(databaseDirectory.listFiles())) {
             if (!storedFile.delete()) { logger.error("Failed to delete database file {}", storedFile.getName()); }
         }
