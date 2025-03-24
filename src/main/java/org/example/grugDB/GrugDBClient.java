@@ -48,6 +48,7 @@ public class GrugDBClient {
      * @param <T> The type of the entity.
      * @throws IOException If an I/O error occurs during serialization.
      */
+    @SuppressWarnings("unchecked")
     synchronized public <T> void save(T entity) throws IOException {
         Class<T> entityClass = (Class<T>) entity.getClass();
         String entityTypeName = entityClass.getSimpleName().toLowerCase();
@@ -93,6 +94,7 @@ public class GrugDBClient {
      * @param <T> The type of the entity.
      * @throws IOException If an I/O error occurs during serialization or deserialization.
      */
+    @SuppressWarnings("unchecked")
     synchronized public <T> void updateOrSave(T entity, Predicate<T> condition, Consumer<T> update) throws IOException {
         Class<T> entityClass = (Class<T>) entity.getClass();
         String entityTypeName = entityClass.getSimpleName().toLowerCase();
@@ -123,6 +125,7 @@ public class GrugDBClient {
      * @param <T> The type of the entities.
      * @throws IOException If an I/O error occurs during serialization.
      */
+    @SuppressWarnings("unchecked")
     synchronized public <T> void saveBatch(List<T> entities) throws IOException {
         Class<T> entityClass = (Class<T>) entities.getFirst().getClass();
         String entityTypeName = entities.getFirst().getClass().getSimpleName().toLowerCase();
@@ -186,7 +189,7 @@ public class GrugDBClient {
         logger.debug("Deleted {} objects of type {}", originalSize - updatedSize, entityTypeName);
 
         if (entityList.isEmpty()) {
-            storageFile.delete();
+            if (!storageFile.delete()) { logger.debug("File couldnt be deleted"); }
             logger.debug("Collection empty, deleted file {}", storageFile.getName());
             return;
         }
