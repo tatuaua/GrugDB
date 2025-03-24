@@ -11,7 +11,7 @@ import java.util.function.Predicate;
 public class GrugDBClient {
 
     private static GrugDBClient singletonInstance = null;
-    private static File databaseDirectory = null;
+    private static final File databaseDirectory = new File("grug_db");
     private static final Logger logger = LoggerFactory.getLogger(GrugDBClient.class);
 
     private GrugDBClient() {
@@ -25,20 +25,19 @@ public class GrugDBClient {
      * @return The singleton instance of GrugDBClient.
      */
     public static GrugDBClient getInstance(boolean shouldClearDatabase) {
-        if (singletonInstance != null) {
-            return singletonInstance;
+        if(databaseDirectory.exists()) {
+            if(shouldClearDatabase) { clearDatabaseDirectory(); }
+        } else {
+            if (!databaseDirectory.mkdirs()) { logger.error("Failed to create database directory"); }
         }
-        databaseDirectory = new File("grug_db");
-        if (shouldClearDatabase && databaseDirectory.exists()) {
-            for (File storedFile : Objects.requireNonNull(databaseDirectory.listFiles())) {
-                storedFile.delete();
-            }
+
+        return singletonInstance == null ? singletonInstance = new GrugDBClient() : singletonInstance;
+    }
+
+    private static void clearDatabaseDirectory() {
+        for (File storedFile : Objects.requireNonNull(databaseDirectory.listFiles())) {
+            if (!storedFile.delete()) { logger.error("Failed to delete database file {}", storedFile.getName()); }
         }
-        if (!databaseDirectory.exists()) {
-            databaseDirectory.mkdirs();
-        }
-        singletonInstance = new GrugDBClient();
-        return singletonInstance;
     }
 
     /**
@@ -176,6 +175,7 @@ public class GrugDBClient {
      * @param condition The predicate to identify entities to delete.
      * @param <T> The type of the entities.
      * @throws IOException If an I/O error occurs during serialization or deserialization.
+     *
      */
     synchronized public <T> void delete(Class<T> entityClass, Predicate<T> condition) throws IOException {
         String entityTypeName = entityClass.getSimpleName().toLowerCase();
@@ -189,7 +189,7 @@ public class GrugDBClient {
         logger.debug("Deleted {} objects of type {}", originalSize - updatedSize, entityTypeName);
 
         if (entityList.isEmpty()) {
-            if (!storageFile.delete()) { logger.debug("File couldnt be deleted"); }
+            if (!storageFile.delete()) { logger.debug("File couldn't be deleted"); }
             logger.debug("Collection empty, deleted file {}", storageFile.getName());
             return;
         }
