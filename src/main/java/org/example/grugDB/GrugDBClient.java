@@ -33,6 +33,9 @@ public class GrugDBClient {
         return singletonInstance == null ? singletonInstance = new GrugDBClient() : singletonInstance;
     }
 
+    /**
+     * Clears all files in the database directory, which empties the database and removes all stored entities
+     */
     public static void clearDatabaseDirectory() {
         for (File storedFile : Objects.requireNonNull(databaseDirectory.listFiles())) {
             if (!storedFile.delete()) { logger.error("Failed to delete database file {}", storedFile.getName()); }
