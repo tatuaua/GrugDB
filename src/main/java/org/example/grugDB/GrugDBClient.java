@@ -25,7 +25,7 @@ public class GrugDBClient {
      */
     public static GrugDBClient getInstance() {
         if(databaseDirectory.exists()) {
-            logger.info("Database directory already created");
+            logger.debug("Database directory already created");
         } else {
             if (!databaseDirectory.mkdirs()) { logger.error("Failed to create database directory"); }
         }
